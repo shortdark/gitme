@@ -2,7 +2,7 @@
 /**
  * GRAPHClass - counts the volume of records per month over x months and displays it as a SVG.
  * PHP Version 5.0.0
- * Version 0.11
+ * Version 0.1.1
  * @package GRAPHClass
  * @link https://github.com/shortdark/gitme/
  * @author Neil Ludlow (shortdark) <neil@shortdark.net>

@@ -218,12 +218,13 @@ public $display_svg_graph = "";
 	/**
 	 * Connect to MySQL via a new PDO
 	 * 
-	 * Function graph_display() creates class output $display_svg_graph
+	 * Function graph_display() creates the output of GRAPHClass in the form of string $display_svg_graph
 	 */
 	public function __construct(){
 		$this->db = new PDO("mysql:host=$this->mysql_host;dbname=$this->mysql_dbname;charset=utf8", "$this->mysql_username", "$this->mysql_password");
 		$this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		$this->db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+		$this->organize_data();
 		$this->graph_display();
 	}
 
@@ -286,12 +287,11 @@ public $display_svg_graph = "";
 	/**
 	 * This function controls the class. The data is obtained, x- and y-axis lengths are
 	 * calculated, if the y-axis is too big it is reduced to the maximum and y-scale
-	 * changed accordingly. Finally, the axes and graphs are drawn and put into an SVG
-	 * image.
+	 * changed accordingly.
 	 *
-	 * @return string SVG
+	 * @return bool
 	 */
-	private function graph_display(){
+	private function organize_data(){
 		$this->grab_data();
 		
 		$this->axiswidth = ($this->startingmonth + 1.5) * $this->monthwidth;
@@ -307,9 +307,16 @@ public $display_svg_graph = "";
 		$this->graphwidth = $this->axiswidth + $this->graphmarginleft + $this->graphmarginright;
 		
 		$this->draw_graphs();
-		
 		$this->draw_axes();
-		
+		return true;
+	}
+	
+	/**
+	 * Finally, the axes and graphs are drawn and put into an SVG image.
+	 *
+	 * @return string SVG
+	 */
+	private function graph_display(){
 		$this->display_svg_graph = "<svg id=\"graph\" width=\"" . $this->graphwidth . "px\" height=\"" . $this->graphheight . "px\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n";
 		$this->display_svg_graph .= $this->display_graph_axis;
 		$this->display_svg_graph .= $this->display_main_graph;

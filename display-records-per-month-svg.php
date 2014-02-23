@@ -26,6 +26,15 @@ class GRAPHClass
 {
 
 /**
+ * ################
+ * ##
+ * ##  CONFIG
+ * ##
+ * ################
+ */
+
+
+/**
  * Specify host for MySQL database connection
  */
 private $mysql_host = "localhost";
@@ -63,7 +72,7 @@ private $record_date = "";
 private $startingmonth= 72;
 
 /**
- * Specify how many months to go back from current month
+ * Specify the maximum height of the graph in pixels, this overrides $yscale
  */ 
 private $max_graph_height= 500;
 
@@ -73,30 +82,14 @@ private $max_graph_height= 500;
  * Default = 1, higher means a taller graph
  */ 
 private $yscale = 1;
+
 /**
  * Specify the distance between points on the x-axis
+ *
+ * At the default number of months, 72, the default 
+ * $monthwidth = 10 gives a x-axis length of around 730px
  */ 
 private $monthwidth = 10;
-
-/**
- * The length of x axis in pixels is calculated with $monthwidth and $startingmonth
- */
-private $axiswidth = 0;
-
-/**
- * The length of y axis in pixels is calculated with $yscale and $max_month_value
- */
-private $axisheight = 0;
-
-/**
- * Specify the height of the whole SVG image
- */
-private $graphheight = 0;
-
-/**
- * Specify the width of the whole SVG image
- */
-private $graphwidth = 0;
 
 /**
  * Specify the margin at the top of the SVG
@@ -131,6 +124,39 @@ private $average_graphline_color = "blue";
  * Specify the colour of the axes and plain text
  */
 private $axes_color = "black";
+
+/**
+ * Specify the associated website URL
+ */
+public $siteurl = "";	
+
+/**
+ * ########################
+ * ##
+ * ##  CLASS VARIABLES
+ * ##
+ * ########################
+ */
+
+/**
+ * The length of x axis in pixels is calculated with $monthwidth and $startingmonth
+ */
+private $axiswidth = 0;
+
+/**
+ * The length of y axis in pixels is calculated with $yscale and $max_month_value
+ */
+private $axisheight = 0;
+
+/**
+ * Specify the height of the whole SVG image
+ */
+private $graphheight = 0;
+
+/**
+ * Specify the width of the whole SVG image
+ */
+private $graphwidth = 0;
 
 /**
  * This variable adds the volume of records from different months in the year
@@ -202,11 +228,6 @@ private $searchyear = 0;
  * We get the length of the y-axis from this.
  */
 private $max_month_value = 0;
-
-/**
- * Specify the associated website URL
- */
-public $siteurl = "";	
 
 /**
  * This is the output of the class
@@ -285,15 +306,14 @@ public $display_svg_graph = "";
 	}
 	
 	/**
-	 * This function controls the class. The data is obtained, x- and y-axis lengths are
-	 * calculated, if the y-axis is too big it is reduced to the maximum and y-scale
-	 * changed accordingly.
+	 * X- and y-axis lengths are calculated, if the y-axis is too big it is reduced 
+	 * to the maximum and y-scale changed accordingly. Likewise, if the scale increases
+	 * the graph size so that it exceeds the maximum height, the scale is reduced so
+	 * that it fits within the limits.
 	 *
 	 * @return bool
 	 */
-	private function organize_data(){
-		$this->grab_data();
-		
+	private function adjust_graph_dimensions(){
 		$this->axiswidth = ($this->startingmonth + 1.5) * $this->monthwidth;
 		if($this->max_graph_height < $this->max_month_value){
 			$this->yscale = $this->max_graph_height / $this->max_month_value;
@@ -306,6 +326,17 @@ public $display_svg_graph = "";
 		$this->graphheight = $this->axisheight + $this->graphmargintop + $this->graphmarginbottom;
 		$this->graphwidth = $this->axiswidth + $this->graphmarginleft + $this->graphmarginright;
 		
+		return true;
+	}
+	
+	/**
+	 * This function controls the class.
+	 *
+	 * @return bool
+	 */
+	private function organize_data(){
+		$this->grab_data();
+		$this->adjust_graph_dimensions();
 		$this->draw_graphs();
 		$this->draw_axes();
 		return true;

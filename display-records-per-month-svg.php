@@ -217,6 +217,8 @@ public $display_svg_graph = "";
 	
 	/**
 	 * Connect to MySQL via a new PDO
+	 * 
+	 * Function graph_display() creates class output $display_svg_graph
 	 */
 	public function __construct(){
 		$this->db = new PDO("mysql:host=$this->mysql_host;dbname=$this->mysql_dbname;charset=utf8", "$this->mysql_username", "$this->mysql_password");

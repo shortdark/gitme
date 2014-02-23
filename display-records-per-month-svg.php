@@ -60,7 +60,7 @@ private $mysql_password = "";
 private $tablename = "";
 
 /**
- * Specify the timestamp fieldname on the table on the MySQL DB
+ * Specify the timestamp fieldname on the table on the MySQL DB, must be a timestamp!
  */
 private $record_date = "";
 	

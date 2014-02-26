@@ -240,20 +240,27 @@ public $display_svg_graph = "";
 	 * Connect to MySQL via a new PDO
 	 * 
 	 * Function graph_display() creates the output of GRAPHClass in the form of string $display_svg_graph
+	 * An error connecting to the database returns an error to the page.
 	 */
 	public function __construct(){
-		$this->db = new PDO("mysql:host=$this->mysql_host;dbname=$this->mysql_dbname;charset=utf8", "$this->mysql_username", "$this->mysql_password");
-		$this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-		$this->db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-		$this->organize_data();
-		$this->graph_display();
+		try {
+  			$this->db = new PDO("mysql:host=$this->mysql_host;dbname=$this->mysql_dbname;charset=utf8", "$this->mysql_username", "$this->mysql_password");
+  			$this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$this->db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+			$this->organize_data();
+			$this->graph_display();
+			return;
+		} catch(PDOException $ex) {
+			$this->display_svg_graph = "<p>Database connection error</p>";
+			return;
+		}
 	}
 
 	/**
 	 * This is the main function that co-ordinates the gathering of data
 	 * 
 	 * 
-	 * @return bool
+	 * @return
 	 */
 	private function grab_data(){
 		$y=0;
@@ -266,7 +273,9 @@ public $display_svg_graph = "";
 					$this->searchyear--;
 				}
 			}
-			$this->monthlyrecordvolume[$i] = intval($this->count_chrono_records());
+			
+			$this->count_chrono_records();
+			$this->monthlyrecordvolume[$i] = intval($this->volume_of_records_in_timerange);
 			if(0==$this->max_month_value or $this->monthlyrecordvolume[$i] > $this->max_month_value){
 				$this->max_month_value = $this->monthlyrecordvolume[$i];
 			}
@@ -282,14 +291,14 @@ public $display_svg_graph = "";
 				$y++;
 			}
 		}
-		return true;
+		return;
 	}
 	
 	/**
 	 * This is the main function that displays the different graphs.
 	 * 
 	 * 
-	 * @return bool
+	 * @return 
 	 */
 	private function draw_graphs(){
 		for($i=$this->startingmonth;$i>=0;$i--){
@@ -302,7 +311,7 @@ public $display_svg_graph = "";
 			$this->draw_year_lines($y);
 			$y++;
 		}
-		return true;
+		return;
 	}
 	
 	/**
@@ -311,7 +320,7 @@ public $display_svg_graph = "";
 	 * the graph size so that it exceeds the maximum height, the scale is reduced so
 	 * that it fits within the limits.
 	 *
-	 * @return bool
+	 * @return 
 	 */
 	private function adjust_graph_dimensions(){
 		$this->axiswidth = ($this->startingmonth + 1.5) * $this->monthwidth;
@@ -326,26 +335,26 @@ public $display_svg_graph = "";
 		$this->graphheight = $this->axisheight + $this->graphmargintop + $this->graphmarginbottom;
 		$this->graphwidth = $this->axiswidth + $this->graphmarginleft + $this->graphmarginright;
 		
-		return true;
+		return;
 	}
 	
 	/**
 	 * This function controls the class.
 	 *
-	 * @return bool
+	 * @return
 	 */
 	private function organize_data(){
 		$this->grab_data();
 		$this->adjust_graph_dimensions();
 		$this->draw_graphs();
 		$this->draw_axes();
-		return true;
+		return;
 	}
 	
 	/**
 	 * Finally, the axes and graphs are drawn and put into an SVG image.
 	 *
-	 * @return string SVG
+	 * @return
 	 */
 	private function graph_display(){
 		$this->display_svg_graph = "<svg id=\"graph\" width=\"" . $this->graphwidth . "px\" height=\"" . $this->graphheight . "px\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n";
@@ -359,9 +368,11 @@ public $display_svg_graph = "";
 	
 	/**
 	 * Gets the date timestamp for the month beginning and ending then gets
-	 * the volume of records for that month
+	 * the volume of records for that month.
+	 * 
+	 * An error in running the SQL returns an error message to the page, 0 records continues as normal
 	 *
-	 * @return integer volume of records
+	 * @return
 	 */
 	private function count_chrono_records(){
 		$searchmonthnext = $this->searchmonth + 1;
@@ -369,22 +380,23 @@ public $display_svg_graph = "";
 		$end = mktime(23, 59, 59, $searchmonthnext, 0, $this->searchyear);
 		
 		try {
-  		  $stmt = $this->db->prepare(" SELECT COUNT(*) FROM $this->tablename WHERE $this->record_date >= :start AND $this->record_date <= :end ");
+  		  		$stmt = $this->db->prepare(" SELECT COUNT(*) FROM $this->tablename WHERE $this->record_date >= :start AND $this->record_date <= :end ");
 				$stmt->bindValue(':start', $start, PDO::PARAM_INT);
 				$stmt->bindValue(':end', $end, PDO::PARAM_INT);
 				$stmt->execute();
 				$this->volume_of_records_in_timerange = $stmt->fetchColumn();
 		} catch(PDOException $ex) {
-		    $this->volume_of_records_in_timerange = "ERROR!!!";
+		    		$this->display_svg_graph = "<p>Unable to count records.</p>";
+				return;
 		}
 		
-		return $this->volume_of_records_in_timerange;
+		return;
 	}
 	
 	/**
 	 * Plots the main data on the graph joined up by a solid line
 	 *
-	 * @return bool
+	 * @return 
 	 */
 	private function draw_svg_main_line($month){
 		$yvalue = $this->axisheight - ($this->yscale * $this->monthlyrecordvolume[$month]);
@@ -398,14 +410,14 @@ public $display_svg_graph = "";
 			$this->display_main_graph .= "L$xvalue $yvalue ";
 		}
 		
-		return true;
+		return;
 	}
 	
   /**
 	 * Draws a dot on each point on the graph, the dots would link to the full list of 
 	 * records
 	 *
-	 * @return bool
+	 * @return 
 	 */
 	private function draw_svg_main_dots($month){
 		$yvalue = $this->axisheight - ($this->yscale * $this->monthlyrecordvolume[$month]);
@@ -413,14 +425,14 @@ public $display_svg_graph = "";
 		
 		$this->main_graph_dots .= "<a xlink:href=\"#\" xlink:title=\"{$this->monthlyrecordvolume[$month]}\" ><circle cx=\"$xvalue\" cy=\"$yvalue\" r=\"2\" stroke=\"$this->main_graphline_color\" fill=\"$this->main_graphline_color\" stroke-width=\"1\" /></a>\n";
 		
-		return true;
+		return;
 	}
 	
 	/**
 	 * This method draws the dotted red lines that are the average volume per month,
 	 * and write the average value in red above the line. 
 	 *
-	 * @return bool 
+	 * @return 
 	 */
 	private function draw_svg_ave_lines($y){
 		$yvalue = $this->axisheight - ($this->yscale * $this->ave_this_year[$y]['volume']);
@@ -441,32 +453,32 @@ public $display_svg_graph = "";
 		
 		$this->main_graph_ave_lines .= "\t<text x=\"$this->x_year_text\" y=\"$ytext\" font-family=\"sans-serif\" font-size=\"16px\" fill=\"$this->average_graphline_color\">{$this->ave_this_year[$y]['volume']}</text>\n";
 		$this->main_graph_ave_lines .= "\t<path stroke=\"$this->average_graphline_color\" stroke-dasharray=\"5, 5\"  d=\"M$this->x_year_start $yvalue H$this->x_year_end\"/>\n";
-		return true;
+		return;
 	}
 	
 	/**
 	 * This method tidies up by drawing the year and a vertical dotted line
 	 *  to separate one year from another.
 	 *
-	 * @return bool 
+	 * @return 
 	 */
 	private function draw_year_lines($y){
 		if(0 != $this->ave_this_year[$y]['month']){
 			$this->main_graph_ave_lines .= "\t<path stroke=\"$this->axes_color\" stroke-dasharray=\"5, 5\"  d=\"M$this->x_year_end 0 v $this->axisheight\"/>\n";
 		}
 		$this->main_graph_ave_lines .= "\t<text x=\"$this->x_year_text\" y=\"20\" font-family=\"sans-serif\" font-size=\"16px\" fill=\"$this->axes_color\">{$this->ave_this_year[$y]['year']}</text>\n";
-		return true;
+		return;
 	}
 	
 	/**
 	 * Draw the x and y axes of the graph
 	 *
-	 * @return bool
+	 * @return
 	 */
 	private function draw_axes(){
 		$this->display_graph_axis = "\t<path stroke=\"$this->axes_color\" stroke-dasharray=\"5, 5\"  d=\"M$this->graphmarginleft $this->axisheight h $this->axiswidth\"/>\n";
 		$this->display_graph_axis .= "\t<path stroke=\"$this->axes_color\" stroke-dasharray=\"5, 5\"  d=\"M$this->graphmargintop 0 v $this->axisheight\"/>\n";
-		return true;
+		return;
 	}
 	
 	

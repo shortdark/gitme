@@ -363,7 +363,7 @@ public $display_svg_graph = "";
 		$this->display_svg_graph .= $this->main_graph_ave_lines;
 		$this->display_svg_graph .= $this->main_graph_dots;
 		$this->display_svg_graph .= "</svg>\n";
-		return $this->display_svg_graph;
+		return;
 	}
 	
 	/**

@@ -1,3 +1,6 @@
 Comments, criticism and suggestions would be much appreciated, especially concerning how readable the PHP code is.
 
 When an instance of the class is created the output variable $display_svg_graph is automatically created.
+
+Because this example reads from a database it might not be easy for people to try out the code for themselves, so 
+I have started to do some code examples that don't need a database.
